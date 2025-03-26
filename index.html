@@ -3,35 +3,35 @@
 <head>
   <meta charset="UTF-8">
   <title>Escáner QR para Choferes</title>
-  <!-- Incluye la librería html5-qrcode -->
+  <!-- Cargamos la librería html5-qrcode -->
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 </head>
 <body>
-  <h1>Escáner QR</h1>
+  <h1>Escáner QR para Choferes</h1>
   <p>Ingresa tu nombre y luego escanea el código QR del pedido:</p>
   <label for="driverName">Nombre del chofer:</label>
   <input type="text" id="driverName" placeholder="Tu nombre">
   <br><br>
-  <!-- Div donde se renderizará la cámara -->
+  <!-- Div para el lector QR -->
   <div id="qr-reader" style="width:300px"></div>
   <!-- Div para mostrar el resultado del escaneo -->
   <div id="qr-reader-results"></div>
-
+  
   <script>
-    // Función que se ejecuta cuando se realiza un escaneo exitoso
+    // Función que se ejecuta cuando se detecta y decodifica un QR exitosamente
     function onScanSuccess(decodedText, decodedResult) {
-      console.log(`Resultado del escaneo: ${decodedText}`);
+      console.log("Resultado del escaneo:", decodedText);
       document.getElementById("qr-reader-results").innerText = "Orden: " + decodedText;
-
-      // Obtén el nombre del chofer
+      
+      // Obtener el nombre del chofer ingresado
       var driverName = document.getElementById("driverName").value;
       if (!driverName) {
         alert("Por favor, ingresa tu nombre antes de escanear.");
         return;
       }
-
-      // Envía la información al endpoint de Apps Script
-      fetch("https://script.google.com/macros/s/AKfycbxJT8KyIQ_DZpK2N4zarIvmoNnFNkB-Ccl2mn3zw_QLS1tvWNyV_l-YcMtXwR7vydms/exec", { 
+      
+      // Enviar los datos al endpoint de Apps Script
+      fetch("https://script.google.com/macros/s/AKfycbxJT8KyIQ_DZpK2N4zarIvmoNnFNkB-Ccl2mn3zw_QLS1tvWNyV_l-YcMtXwR7vydms/exec", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -54,13 +54,13 @@
         console.error("Error:", error);
       });
     }
-
-    // Función que se ejecuta cuando falla el escaneo (puedes usarla para debuggear)
+    
+    // Función para manejar fallos en el escaneo
     function onScanFailure(error) {
-      console.warn(`Error en el escaneo: ${error}`);
+      console.warn("Error en el escaneo:", error);
     }
-
-    // Inicializa el escáner en el div con id "qr-reader"
+    
+    // Inicializar el lector de QR en el div con id "qr-reader"
     let html5QrcodeScanner = new Html5QrcodeScanner(
       "qr-reader", { fps: 10, qrbox: 250 }
     );
