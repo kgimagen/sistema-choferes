@@ -20,43 +20,50 @@
   <script>
     // Función que se ejecuta cuando se detecta y decodifica un QR exitosamente
     function onScanSuccess(decodedText, decodedResult) {
-      console.log("Resultado del escaneo:", decodedText);
-      document.getElementById("qr-reader-results").innerText = "Orden: " + decodedText;
-      
-      // Obtener el nombre del chofer ingresado
-      var driverName = document.getElementById("driverName").value;
-      console.log("Nombre del chofer ingresado:", driverName);
-      if (!driverName) {
-        alert("Por favor, ingresa tu nombre antes de escanear.");
-        return;
-      }
-      
-      console.log("Enviando datos al endpoint...");
-      // Usamos mode: 'no-cors' para evitar bloqueos por CORS.
-      fetch("https://script.google.com/macros/s/AKfycbzCaYgn2ZTtHbxunD7n05EBcqXnoX7VlTNf4scjeybHlwM7Xpz93N9JA3tsT9bEIuRD/exec", {
-        method: "POST",
-        mode: "no-cors",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          orderNumber: decodedText,
-          chofer: driverName
-        })
+  console.log("Resultado del escaneo:", decodedText);
+  document.getElementById("qr-reader-results").innerText = "Orden: " + decodedText;
+  
+  var driverName = document.getElementById("driverName").value;
+  if (!driverName) {
+    alert("Por favor, ingresa tu nombre antes de escanear.");
+    return;
+  }
+  
+  // Detenemos el escáner inmediatamente
+  html5QrcodeScanner.clear().then(() => {
+    console.log("Escáner detenido");
+    
+    // Enviamos la solicitud POST después de detener el escáner
+    fetch("https://script.google.com/macros/s/AKfycbzZiln36mthQ3S6PHVFSs-uYAq07hqrINyzqjZkuo7rOdx4i3nT8BI_QLHrF7kfvooL/exec", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        orderNumber: decodedText,
+        chofer: driverName
       })
-      .then(response => {
-        console.log("HTTP status:", response.status);
-        // Con mode no-cors, la respuesta será opaque (no se puede leer).
-        return response;
-      })
-      .then(data => {
-        console.log("Respuesta del servidor (opaca):", data);
+    })
+    .then(response => {
+      console.log("HTTP status:", response.status);
+      return response.json();
+    })
+    .then(data => {
+      console.log("Respuesta del servidor:", data);
+      if (data.result === "success") {
         alert("Registro enviado. Verifica la actualización en la hoja.");
-      })
-      .catch(error => {
-        console.error("Error en fetch:", error);
-      });
-    }
+      } else {
+        alert("Error: " + data.message);
+      }
+    })
+    .catch(error => {
+      console.error("Error en fetch:", error);
+    });
+  }).catch(error => {
+    console.error("Error al detener el escáner:", error);
+  });
+}
+
     
     // Función para manejar fallos en el escaneo
     function onScanFailure(error) {
