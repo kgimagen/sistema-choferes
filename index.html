@@ -1,87 +1,71 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>Escáner QR para Choferes</title>
-  <!-- Cargamos la librería html5-qrcode -->
-  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-</head>
-<body>
-  <h1>Escáner QR para Choferes</h1>
-  <p>Ingresa tu nombre y luego escanea el código QR del pedido:</p>
-  <label for="driverName">Nombre del chofer:</label>
-  <input type="text" id="driverName" placeholder="Tu nombre">
-  <br><br>
-  <!-- Div para el lector QR -->
-  <div id="qr-reader" style="width:300px"></div>
-  <!-- Div para mostrar el resultado del escaneo -->
-  <div id="qr-reader-results"></div>
+// Responde a solicitudes GET (o preflight OPTIONS, en algunos casos)
+function doGet(e) {
+  return ContentService.createTextOutput('')
+    .setMimeType(ContentService.MimeType.JSON)
+    .setHeader("Access-Control-Allow-Origin", "*")
+    .setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+    .setHeader("Access-Control-Allow-Headers", "Content-Type");
+}
+
+// También implementa doOptions para solicitudes preflight
+function doOptions(e) {
+  return ContentService.createTextOutput('')
+    .setMimeType(ContentService.MimeType.JSON)
+    .setHeader("Access-Control-Allow-Origin", "*")
+    .setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+    .setHeader("Access-Control-Allow-Headers", "Content-Type");
+}
+
+// Función que procesa solicitudes POST y actualiza la hoja
+function doPost(e) {
+  if (!e) {
+    return ContentService.createTextOutput("No POST data received.");
+  }
   
-  <script>
-    // Bandera para evitar múltiples escaneos
-    let scanCompleted = false;
+  try {
+    var data = JSON.parse(e.postData.contents);
+    var orderNumber = data.orderNumber;
+    var chofer = data.chofer;
+    var fechaEscaneo = new Date();
     
-    // Función que se ejecuta cuando se detecta y decodifica un QR exitosamente
-    function onScanSuccess(decodedText, decodedResult) {
-      if (scanCompleted) return; // Si ya se procesó, salir.
-      
-      console.log("Resultado del escaneo:", decodedText);
-      document.getElementById("qr-reader-results").innerText = "Orden: " + decodedText;
-      
-      // Obtener el nombre del chofer ingresado
-      var driverName = document.getElementById("driverName").value;
-      console.log("Nombre del chofer ingresado:", driverName);
-      if (!driverName) {
-        alert("Por favor, ingresa tu nombre antes de escanear.");
-        return;
+    // Abre la hoja de cálculo mediante su ID
+    var ss = SpreadsheetApp.openById("12nAfHXvoet07ai1dNhmwwhvs1rcwfdMOtnod7ozOL7w");
+    var sheet = ss.getSheetByName("Ventas");
+    var rows = sheet.getDataRange().getValues();
+    var headers = rows[0];
+    
+    var orderCol = headers.indexOf("Número de orden");
+    var choferCol = headers.indexOf("Chofer");
+    var fechaCol = headers.indexOf("Fecha de escaneo");
+    
+    if (orderCol === -1 || choferCol === -1 || fechaCol === -1) {
+      throw new Error("No se encontraron una o más columnas requeridas en la hoja.");
+    }
+    
+    var rowFound = -1;
+    for (var i = 1; i < rows.length; i++) {
+      if (rows[i][orderCol].toString().trim() === orderNumber.toString().trim()) {
+        rowFound = i + 1;
+        break;
       }
-      
-      scanCompleted = true; // Evita que se procese nuevamente
-      console.log("Enviando datos al endpoint...");
-      fetch("https://script.google.com/macros/s/AKfycbzZiln36mthQ3S6PHVFSs-uYAq07hqrINyzqjZkuo7rOdx4i3nT8BI_QLHrF7kfvooL/exec", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          orderNumber: decodedText,
-          chofer: driverName
-        })
-      })
-      .then(response => {
-        console.log("HTTP status:", response.status);
-        return response.json();
-      })
-      .then(data => {
-        console.log("Respuesta del servidor:", data);
-        if (data.result === "success") {
-          alert("Registro enviado. Verifica la actualización en la hoja.");
-        } else {
-          alert("Error: " + data.message);
-        }
-      })
-      .catch(error => {
-        console.error("Error en fetch:", error);
-      });
-      
-      // Opcional: detener el escaneo para que no se procese nuevamente
-      html5QrcodeScanner.clear().then(() => {
-        console.log("Escáner detenido");
-      }).catch(error => {
-        console.error("Error al detener el escáner:", error);
-      });
     }
     
-    // Función para manejar fallos en el escaneo
-    function onScanFailure(error) {
-      console.warn("Error en el escaneo:", error);
+    if (rowFound === -1) {
+      throw new Error("Orden no encontrada: " + orderNumber);
     }
     
-    // Inicializar el lector de QR en el div con id "qr-reader"
-    let html5QrcodeScanner = new Html5QrcodeScanner(
-      "qr-reader", { fps: 10, qrbox: 250 }
-    );
-    html5QrcodeScanner.render(onScanSuccess, onScanFailure);
-  </script>
-</body>
-</html>
+    sheet.getRange(rowFound, choferCol + 1).setValue(chofer);
+    sheet.getRange(rowFound, fechaCol + 1).setValue(fechaEscaneo);
+    
+    var output = ContentService.createTextOutput(JSON.stringify({result: "success"}));
+    output.setMimeType(ContentService.MimeType.JSON);
+    output.setHeader("Access-Control-Allow-Origin", "*");
+    return output;
+    
+  } catch (err) {
+    var errorOutput = ContentService.createTextOutput(JSON.stringify({result: "error", message: err.toString()}));
+    errorOutput.setMimeType(ContentService.MimeType.JSON);
+    errorOutput.setHeader("Access-Control-Allow-Origin", "*");
+    return errorOutput;
+  }
+}
