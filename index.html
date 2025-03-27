@@ -32,8 +32,10 @@
       }
       
       console.log("Enviando datos al endpoint...");
+      // Usamos mode: 'no-cors' para evitar bloqueos por CORS.
       fetch("https://script.google.com/macros/s/AKfycbzZiln36mthQ3S6PHVFSs-uYAq07hqrINyzqjZkuo7rOdx4i3nT8BI_QLHrF7kfvooL/exec", {
         method: "POST",
+        mode: "no-cors",
         headers: {
           "Content-Type": "application/json"
         },
@@ -44,15 +46,12 @@
       })
       .then(response => {
         console.log("HTTP status:", response.status);
-        return response.json();
+        // Con mode no-cors, la respuesta será opaque (no se puede leer).
+        return response;
       })
       .then(data => {
-        console.log("Respuesta del servidor:", data);
-        if (data.result === "success") {
-          alert("Registro exitoso");
-        } else {
-          alert("Error: " + data.message);
-        }
+        console.log("Respuesta del servidor (opaca):", data);
+        alert("Registro enviado. Verifica la actualización en la hoja.");
       })
       .catch(error => {
         console.error("Error en fetch:", error);
