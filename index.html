@@ -18,52 +18,59 @@
   <div id="qr-reader-results"></div>
   
   <script>
+    // Bandera para evitar múltiples escaneos
+    let scanCompleted = false;
+    
     // Función que se ejecuta cuando se detecta y decodifica un QR exitosamente
     function onScanSuccess(decodedText, decodedResult) {
-  console.log("Resultado del escaneo:", decodedText);
-  document.getElementById("qr-reader-results").innerText = "Orden: " + decodedText;
-  
-  var driverName = document.getElementById("driverName").value;
-  if (!driverName) {
-    alert("Por favor, ingresa tu nombre antes de escanear.");
-    return;
-  }
-  
-  // Detenemos el escáner inmediatamente
-  html5QrcodeScanner.clear().then(() => {
-    console.log("Escáner detenido");
-    
-    // Enviamos la solicitud POST después de detener el escáner
-    fetch("https://script.google.com/macros/s/AKfycbzZiln36mthQ3S6PHVFSs-uYAq07hqrINyzqjZkuo7rOdx4i3nT8BI_QLHrF7kfvooL/exec", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        orderNumber: decodedText,
-        chofer: driverName
-      })
-    })
-    .then(response => {
-      console.log("HTTP status:", response.status);
-      return response.json();
-    })
-    .then(data => {
-      console.log("Respuesta del servidor:", data);
-      if (data.result === "success") {
-        alert("Registro enviado. Verifica la actualización en la hoja.");
-      } else {
-        alert("Error: " + data.message);
+      if (scanCompleted) return; // Si ya se procesó, salir.
+      
+      console.log("Resultado del escaneo:", decodedText);
+      document.getElementById("qr-reader-results").innerText = "Orden: " + decodedText;
+      
+      // Obtener el nombre del chofer ingresado
+      var driverName = document.getElementById("driverName").value;
+      console.log("Nombre del chofer ingresado:", driverName);
+      if (!driverName) {
+        alert("Por favor, ingresa tu nombre antes de escanear.");
+        return;
       }
-    })
-    .catch(error => {
-      console.error("Error en fetch:", error);
-    });
-  }).catch(error => {
-    console.error("Error al detener el escáner:", error);
-  });
-}
-
+      
+      scanCompleted = true; // Evita que se procese nuevamente
+      console.log("Enviando datos al endpoint...");
+      fetch("https://script.google.com/macros/s/AKfycbzZiln36mthQ3S6PHVFSs-uYAq07hqrINyzqjZkuo7rOdx4i3nT8BI_QLHrF7kfvooL/exec", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          orderNumber: decodedText,
+          chofer: driverName
+        })
+      })
+      .then(response => {
+        console.log("HTTP status:", response.status);
+        return response.json();
+      })
+      .then(data => {
+        console.log("Respuesta del servidor:", data);
+        if (data.result === "success") {
+          alert("Registro enviado. Verifica la actualización en la hoja.");
+        } else {
+          alert("Error: " + data.message);
+        }
+      })
+      .catch(error => {
+        console.error("Error en fetch:", error);
+      });
+      
+      // Opcional: detener el escaneo para que no se procese nuevamente
+      html5QrcodeScanner.clear().then(() => {
+        console.log("Escáner detenido");
+      }).catch(error => {
+        console.error("Error al detener el escáner:", error);
+      });
+    }
     
     // Función para manejar fallos en el escaneo
     function onScanFailure(error) {
