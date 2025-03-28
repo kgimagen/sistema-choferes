@@ -82,7 +82,7 @@
       console.log("Resultado del escaneo:", decodedText);
       document.getElementById("qr-reader-results").innerText = "Orden: " + decodedText;
       
-      var driverSelect = document.getElementById("driverSelect");
+      var driverSelect = document.getElementById("Choferes");
       var chofer = driverSelect.value;
       console.log("Chofer seleccionado:", chofer);
       if (!chofer) {
@@ -91,7 +91,7 @@
       }
       
       console.log("Enviando datos al endpoint...");
-      fetch("https://script.google.com/macros/s/AKfycbwlCqIWsdpX0-IkECj89jnTvZuwyz5o7eZLr7vIsGzHtN1xwfRn_6IJMDTntmHQOvRd/exec", {
+      fetch("https://script.google.com/macros/s/AKfycbz_XfZ7hrZEqc4wiB2nYlhpQN-XRSttLmK8mzhmH_UFpdTET5920fC1ebfh2RjJKGZz/exec", {
         method: "POST",
         mode: "no-cors",
         headers: { "Content-Type": "application/json" },
