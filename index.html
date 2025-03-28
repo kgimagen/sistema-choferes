@@ -2,106 +2,51 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Escáner QR para Choferes</title>
   <!-- Cargamos la librería html5-qrcode -->
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-  <style>
-    body { 
-      font-family: Arial, sans-serif; 
-      padding: 10px; 
-      margin: 0; 
-      background-color: #f9f9f9; 
-    }
-    h1 { 
-      font-size: 24px; 
-      text-align: center; 
-      margin-top: 20px; 
-    }
-    p { text-align: center; }
-    label { 
-      font-size: 18px; 
-      margin-top: 10px; 
-      display: block; 
-      text-align: center; 
-    }
-    select { 
-      width: 90%; 
-      padding: 10px; 
-      font-size: 16px; 
-      margin: 10px auto; 
-      display: block; 
-      border: 1px solid #ccc; 
-      border-radius: 4px; 
-    }
-    #qr-reader { 
-      margin: 20px auto; 
-      width: 90%; 
-      max-width: 300px; 
-    }
-    #qr-reader-results { 
-      text-align: center; 
-      font-size: 18px; 
-      margin-top: 10px; 
-      color: #333; 
-    }
-  </style>
 </head>
 <body>
   <h1>Escáner QR para Choferes</h1>
-  <p>Selecciona tu perfil y luego escanea el código QR del pedido:</p>
-  
-  <label for="driverSelect">Nombre del chofer:</label>
-  <select id="driverSelect">
-    <option value="" disabled selected>Cargando perfiles...</option>
-  </select>
-  
-  <div id="qr-reader"></div>
+  <p>Ingresa tu nombre y luego escanea el código QR del pedido:</p>
+  <label for="driverName">Nombre del chofer:</label>
+  <input type="text" id="driverName" placeholder="Tu nombre">
+  <br><br>
+  <!-- Div para el lector QR -->
+  <div id="qr-reader" style="width:300px"></div>
+  <!-- Div para mostrar el resultado del escaneo -->
   <div id="qr-reader-results"></div>
   
   <script>
-    // Función que se llama cuando se obtienen los perfiles desde Apps Script.
-    function populateProfiles(profiles) {
-      var select = document.getElementById("driverSelect");
-      // Limpia y agrega una opción por defecto
-      select.innerHTML = '<option value="" disabled selected>Selecciona tu nombre</option>';
-      profiles.forEach(function(profile) {
-        var option = document.createElement("option");
-        option.value = profile.name;
-        option.text = profile.name;
-        select.appendChild(option);
-      });
-    }
-    
-    // Al cargar la página se llama a la función getProfiles del Apps Script
-    window.onload = function() {
-      google.script.run.withSuccessHandler(populateProfiles).getProfiles();
-    };
-    
+    // Función que se ejecuta cuando se detecta y decodifica un QR exitosamente
     function onScanSuccess(decodedText, decodedResult) {
       console.log("Resultado del escaneo:", decodedText);
       document.getElementById("qr-reader-results").innerText = "Orden: " + decodedText;
       
-      var driverSelect = document.getElementById("Choferes");
-      var chofer = driverSelect.value;
-      console.log("Chofer seleccionado:", chofer);
-      if (!chofer) {
-        alert("Por favor, selecciona tu perfil de chofer antes de escanear.");
+      // Obtener el nombre del chofer ingresado
+      var driverName = document.getElementById("driverName").value;
+      console.log("Nombre del chofer ingresado:", driverName);
+      if (!driverName) {
+        alert("Por favor, ingresa tu nombre antes de escanear.");
         return;
       }
       
       console.log("Enviando datos al endpoint...");
+      // Usamos mode: 'no-cors' para evitar bloqueos por CORS.
       fetch("https://script.google.com/macros/s/AKfycbz_XfZ7hrZEqc4wiB2nYlhpQN-XRSttLmK8mzhmH_UFpdTET5920fC1ebfh2RjJKGZz/exec", {
         method: "POST",
         mode: "no-cors",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json"
+        },
         body: JSON.stringify({
           orderNumber: decodedText,
-          chofer: chofer
+          chofer: driverName
         })
       })
       .then(response => {
         console.log("HTTP status:", response.status);
+        // Con mode no-cors, la respuesta será opaque (no se puede leer).
         return response;
       })
       .then(data => {
@@ -113,11 +58,15 @@
       });
     }
     
+    // Función para manejar fallos en el escaneo
     function onScanFailure(error) {
       console.warn("Error en el escaneo:", error);
     }
     
-    let html5QrcodeScanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: 250 });
+    // Inicializar el lector de QR en el div con id "qr-reader"
+    let html5QrcodeScanner = new Html5QrcodeScanner(
+      "qr-reader", { fps: 10, qrbox: 250 }
+    );
     html5QrcodeScanner.render(onScanSuccess, onScanFailure);
   </script>
 </body>
