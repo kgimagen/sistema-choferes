@@ -7,62 +7,55 @@
   <!-- Cargamos la librería html5-qrcode -->
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 10px;
-      margin: 0;
-      background-color: #f9f9f9;
-    }
-    h1 {
-      font-size: 24px;
-      text-align: center;
-      margin-top: 20px;
-    }
-    p {
-      text-align: center;
-    }
-    label {
-      font-size: 18px;
-    }
-    input[type="text"] {
-      width: 90%;
-      padding: 10px;
-      font-size: 16px;
-      margin: 10px auto;
-      display: block;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    }
-    #qr-reader {
-      margin: 20px auto;
-      width: 90%;
-      max-width: 300px;
-    }
-    #qr-reader-results {
-      text-align: center;
-      font-size: 18px;
-      margin-top: 10px;
-      color: #333;
-    }
+    body { font-family: Arial, sans-serif; padding: 10px; margin: 0; background-color: #f9f9f9; }
+    h1 { font-size: 24px; text-align: center; margin-top: 20px; }
+    p { text-align: center; }
+    label { font-size: 18px; margin-top: 10px; display: block; text-align: center; }
+    select { width: 90%; padding: 10px; font-size: 16px; margin: 10px auto; display: block; border: 1px solid #ccc; border-radius: 4px; }
+    #qr-reader { margin: 20px auto; width: 90%; max-width: 300px; }
+    #qr-reader-results { text-align: center; font-size: 18px; margin-top: 10px; color: #333; }
   </style>
 </head>
 <body>
   <h1>Escáner QR para Choferes</h1>
-  <p>Ingresa tu nombre y luego escanea el código QR del pedido:</p>
-  <label for="driverName">Nombre del chofer:</label>
-  <input type="text" id="driverName" placeholder="Tu nombre">
+  <p>Selecciona tu perfil y luego escanea el código QR del pedido:</p>
+  
+  <label for="driverSelect">Nombre del chofer:</label>
+  <select id="driverSelect">
+    <option value="" disabled selected>Cargando perfiles...</option>
+  </select>
+  
   <div id="qr-reader"></div>
   <div id="qr-reader-results"></div>
   
   <script>
+    // Función que se llama cuando se obtienen los perfiles desde Apps Script.
+    function populateProfiles(profiles) {
+      var select = document.getElementById("driverSelect");
+      // Limpia y agrega una opción por defecto
+      select.innerHTML = '<option value="" disabled selected>Selecciona tu nombre</option>';
+      profiles.forEach(function(profile) {
+        var option = document.createElement("option");
+        option.value = profile.name;
+        option.text = profile.name;
+        select.appendChild(option);
+      });
+    }
+    
+    // Llama a la función getProfiles de Apps Script al cargar la página.
+    window.onload = function() {
+      google.script.run.withSuccessHandler(populateProfiles).getProfiles();
+    };
+    
     function onScanSuccess(decodedText, decodedResult) {
       console.log("Resultado del escaneo:", decodedText);
       document.getElementById("qr-reader-results").innerText = "Orden: " + decodedText;
       
-      var driverName = document.getElementById("driverName").value;
-      console.log("Nombre del chofer ingresado:", driverName);
-      if (!driverName) {
-        alert("Por favor, ingresa tu nombre antes de escanear.");
+      var driverSelect = document.getElementById("driverSelect");
+      var chofer = driverSelect.value;
+      console.log("Chofer seleccionado:", chofer);
+      if (!chofer) {
+        alert("Por favor, selecciona tu perfil de chofer antes de escanear.");
         return;
       }
       
@@ -70,12 +63,10 @@
       fetch("https://script.google.com/macros/s/AKfycbyz_MKrH11a8LuDVUR5_5OHri0fLwB-sdsmzhbjfci9DeC6Apfh7W8rfYVhSN21uG7e/exec", {
         method: "POST",
         mode: "no-cors",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           orderNumber: decodedText,
-          chofer: driverName
+          chofer: chofer
         })
       })
       .then(response => {
