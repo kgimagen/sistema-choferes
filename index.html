@@ -7,13 +7,44 @@
   <!-- Cargamos la librería html5-qrcode -->
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <style>
-    body { font-family: Arial, sans-serif; padding: 10px; margin: 0; background-color: #f9f9f9; }
-    h1 { font-size: 24px; text-align: center; margin-top: 20px; }
+    body { 
+      font-family: Arial, sans-serif; 
+      padding: 10px; 
+      margin: 0; 
+      background-color: #f9f9f9; 
+    }
+    h1 { 
+      font-size: 24px; 
+      text-align: center; 
+      margin-top: 20px; 
+    }
     p { text-align: center; }
-    label { font-size: 18px; margin-top: 10px; display: block; text-align: center; }
-    select { width: 90%; padding: 10px; font-size: 16px; margin: 10px auto; display: block; border: 1px solid #ccc; border-radius: 4px; }
-    #qr-reader { margin: 20px auto; width: 90%; max-width: 300px; }
-    #qr-reader-results { text-align: center; font-size: 18px; margin-top: 10px; color: #333; }
+    label { 
+      font-size: 18px; 
+      margin-top: 10px; 
+      display: block; 
+      text-align: center; 
+    }
+    select { 
+      width: 90%; 
+      padding: 10px; 
+      font-size: 16px; 
+      margin: 10px auto; 
+      display: block; 
+      border: 1px solid #ccc; 
+      border-radius: 4px; 
+    }
+    #qr-reader { 
+      margin: 20px auto; 
+      width: 90%; 
+      max-width: 300px; 
+    }
+    #qr-reader-results { 
+      text-align: center; 
+      font-size: 18px; 
+      margin-top: 10px; 
+      color: #333; 
+    }
   </style>
 </head>
 <body>
@@ -42,7 +73,7 @@
       });
     }
     
-    // Llama a la función getProfiles de Apps Script al cargar la página.
+    // Al cargar la página se llama a la función getProfiles del Apps Script
     window.onload = function() {
       google.script.run.withSuccessHandler(populateProfiles).getProfiles();
     };
@@ -51,7 +82,7 @@
       console.log("Resultado del escaneo:", decodedText);
       document.getElementById("qr-reader-results").innerText = "Orden: " + decodedText;
       
-      var driverSelect = document.getElementById("Choferes");
+      var driverSelect = document.getElementById("driverSelect");
       var chofer = driverSelect.value;
       console.log("Chofer seleccionado:", chofer);
       if (!chofer) {
